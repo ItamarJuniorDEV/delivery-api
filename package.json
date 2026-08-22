@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch --env-file .env -r tsconfig-paths/register src/server.ts",
-    "test:dev": "npx cross-env NODE_OPTIONS=--experimental-vm-modules npx jest --watchAll --runInBand"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
+    "test:dev": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watchAll --runInBand",
+    "typecheck": "tsc --noEmit"
   },
   "license": "ISC",
   "author": "Itamar Junior",
