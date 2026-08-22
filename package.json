@@ -4,14 +4,16 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch --env-file .env -r tsconfig-paths/register src/server.ts",
-    "test:dev": "npx cross-env NODE_OPTIONS=--experimental-vm-modules npx jest --watchAll --runInBand"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
+    "test:dev": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watchAll --runInBand",
+    "typecheck": "tsc --noEmit"
   },
   "license": "ISC",
   "author": "Itamar Junior",
   "description": "API de entregas de encomendas",
   "dependencies": {
     "@prisma/client": "^5.19.1",
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "express": "^4.19.2",
     "express-async-errors": "^3.1.1",
     "express-rate-limit": "^8.5.1",

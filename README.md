@@ -1,85 +1,83 @@
-# api-delivery
+# Delivery API
 
-API REST para gestão de entregas com autenticação por JWT, controle de acesso por papel (cliente e vendedor) e rastreamento de status com histórico em log.
+API REST para cadastro de usuários e acompanhamento de entregas. O projeto usa autenticação JWT, autorização por papel e histórico de eventos de entrega com PostgreSQL e Prisma.
 
 ## Funcionalidades
 
-- Cadastro e autenticação de usuários
-- Controle de acesso baseado em papel — clientes consultam apenas suas próprias entregas; vendedores gerenciam todas
-- CRUD de entregas com status `processing`, `shipped` e `delivered`
-- Log automático na mudança de status, mais a possibilidade de registrar eventos manuais
-- Rate limiting no login (5 tentativas / 15 min) para mitigar brute-force
-- Validação de input com Zod em todos os endpoints
-- Documentação interativa via Swagger UI
+- cadastro e autenticação de usuários;
+- papéis `customer` e `sale`;
+- criação e listagem de entregas por vendedores;
+- atualização de status (`processing`, `shipped`, `delivered`);
+- gravação do status e do respectivo log na mesma transação;
+- consulta do histórico pelo cliente dono da entrega ou por vendedores;
+- registro manual de eventos por vendedores;
+- rate limiting no endpoint de sessão;
+- documentação HTTP com Swagger UI.
 
 ## Stack
 
-- Node.js + TypeScript
+- Node.js 20+
+- TypeScript
 - Express
-- Prisma ORM + PostgreSQL
+- Prisma ORM
+- PostgreSQL
 - Zod
-- JWT + bcrypt
-- Jest + Supertest
-- express-rate-limit
-- Swagger UI
+- JWT e bcrypt
+- Jest e Supertest
 
-## Como rodar localmente
-
-Pré-requisitos: Node 20+ e Docker.
+## Como executar
 
 ```bash
-git clone https://github.com/ItamarJuniorDEV/api-delivery
-cd api-delivery
-
-cp .env-example .env
-# edite .env com as variáveis abaixo
-
+git clone https://github.com/ItamarJuniorDEV/delivery-api.git
+cd delivery-api
 npm install
-docker-compose up -d
-npx prisma migrate deploy
+cp .env-example .env
+```
 
+Configure o `.env`:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/api-delivery?schema=public"
+JWT_SECRET="uma-chave-local"
+```
+
+Com PostgreSQL disponível, aplique as migrations e inicie a API:
+
+```bash
+npx prisma migrate deploy
 npm run dev
 ```
 
-Variáveis em `.env`:
+A aplicação sobe em `http://localhost:3333` e a documentação Swagger fica em `/api-docs`.
 
-```
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/api-delivery?schema=public"
-JWT_SECRET="uma-string-secreta-de-pelo-menos-32-caracteres"
-```
+## Endpoints principais
 
-API sobe em `http://localhost:3333`. Documentação interativa em `http://localhost:3333/api-docs`.
-
-## Endpoints
-
-| Método | Rota                                | Auth   | Descrição                          |
-|--------|-------------------------------------|--------|------------------------------------|
-| POST   | `/users`                            | —      | Cadastra usuário                   |
-| POST   | `/sessions`                         | —      | Login, retorna JWT (rate-limited)  |
-| POST   | `/deliveries`                       | sale   | Cria entrega                       |
-| GET    | `/deliveries`                       | sale   | Lista entregas                     |
-| PATCH  | `/deliveries/:id/status`            | sale   | Atualiza status da entrega         |
-| POST   | `/delivery-logs`                    | sale   | Registra evento manual no log      |
-| GET    | `/delivery-logs/:delivery_id/show`  | both   | Detalhes da entrega + histórico    |
-
-Papéis: `customer` (cliente) e `sale` (vendedor).
-
-## Modelos
-
-**User** — `id`, `name`, `email` (único), `password` (hash bcrypt), `role`, `createdAt`, `updatedAt`
-
-**Delivery** — `id`, `userId`, `description`, `status`, `createdAt`, `updatedAt`
-
-**DeliveryLog** — `id`, `deliveryId`, `description`, `createdAt`, `updatedAt`
+| Método | Rota | Acesso | Descrição |
+| --- | --- | --- | --- |
+| POST | `/users` | público | Cadastra usuário |
+| POST | `/sessions` | público | Autentica e retorna JWT |
+| POST | `/deliveries` | `sale` | Cria entrega |
+| GET | `/deliveries` | `sale` | Lista entregas |
+| PATCH | `/deliveries/:id/status` | `sale` | Atualiza status e registra log |
+| POST | `/delivery-logs` | `sale` | Registra evento manual |
+| GET | `/delivery-logs/:delivery_id/show` | `sale` / `customer` | Retorna entrega e histórico; clientes só acessam as próprias |
 
 ## Testes
 
+A suíte usa Jest, Supertest e um banco PostgreSQL. Além de cadastro e sessão, cobre criação de entrega, atualização de status, histórico, autorização por proprietário e rollback quando a gravação do log falha.
+
 ```bash
-npm run test:dev
+npm test
 ```
 
-Testes de integração com Supertest cobrindo cadastro de usuário e login.
+Para validar apenas o TypeScript:
 
-## Autor
+```bash
+npm run typecheck
+```
 
-Itamar Junior — [github.com/ItamarJuniorDEV](https://github.com/ItamarJuniorDEV)
+Os workflows de CI executam os testes com PostgreSQL e a verificação de tipos. O workflow de segurança executa auditoria das dependências de produção e varredura do histórico com Gitleaks.
+
+## Licença
+
+MIT. Consulte o arquivo `LICENSE`.
