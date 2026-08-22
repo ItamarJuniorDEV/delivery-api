@@ -1,0 +1,42 @@
+name: Refresh Lockfile
+
+on:
+  push:
+    branches: [fix/delivery-integrity-review]
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: fix/delivery-integrity-review
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Refresh lockfile
+        run: |
+          npm install --package-lock-only
+          npm audit fix --package-lock-only
+
+      - name: Validate production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Commit lockfile when changed
+        run: |
+          if git diff --quiet package-lock.json; then
+            exit 0
+          fi
+          git config user.name "Itamar Junior"
+          git config user.email "100168621+ItamarJuniorDEV@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore: atualizar dependências vulneráveis"
+          git push origin HEAD:fix/delivery-integrity-review
